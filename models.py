@@ -8,7 +8,7 @@ url = URL.create(
     username="postgres",
     password="sudan1",
     host="localhost",
-    database="todo",
+    database="covid-cases",
     port=5432
 )
 
@@ -29,9 +29,12 @@ class Cases(Base):
     problem_population_density = Column(Integer)
     problem_population = Column(Integer)
     problem_age_distribution = Column(SmallInteger)
-    problem_number_of_active_cases = Column(Integer)
-    problem_number_of_severe_active_cases = Column(Integer)
-    problem_number_of_deaths = Column(Integer)
+    problem_start_number_of_active_cases = Column(Integer)
+    problem_end_number_of_active_cases = Column(Integer)
+    problem_start_number_of_icu_active_cases = Column(Integer)
+    problem_end_number_of_icu_active_cases = Column(Integer)
+    problem_start_number_of_deaths= Column(Integer)
+    problem_end_number_of_deaths = Column(Integer)
     problem_vaccinated_population = Column(SmallInteger)
     problem_infection_rate = Column(Float)
     problem_mortality_rate = Column(Float)
