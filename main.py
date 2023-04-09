@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from models import Cases, session
 from pydantic import BaseModel
 import cityDetails
+from fastapi.middleware.cors import CORSMiddleware
 
 
 class Case(BaseModel):
@@ -21,6 +22,19 @@ class Case(BaseModel):
 
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:3000",
+    "https://cbr-covid.netlify.app"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/cases/create")
