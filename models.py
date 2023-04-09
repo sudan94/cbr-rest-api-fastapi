@@ -1,14 +1,22 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Date, SmallInteger, Float, Text
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import declarative_base, sessionmaker
+from functools import lru_cache
+import config
 
+@lru_cache()
+def get_settings():
+    return config.Settings()
+
+env = get_settings()
+print(env.POSTGRES_USER)
 
 url = URL.create(
-    drivername="postgresql",
-    username="postgres",
-    password="sudan1",
-    host="localhost",
-    database="covid-cases",
+    drivername=env.POSTGRES_DRIVERNMAE,
+    username=env.POSTGRES_USER,
+    password=env.POSTGRES_PASSWORD,
+    host=env.POSTGRES_HOSTNAME,
+    database=env.POSTGRES_DB,
     port=5432
 )
 
