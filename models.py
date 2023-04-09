@@ -1,0 +1,45 @@
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, Date, SmallInteger, Float, Text
+from sqlalchemy.engine import URL
+from sqlalchemy.orm import declarative_base, sessionmaker
+
+
+url = URL.create(
+    drivername="postgresql",
+    username="postgres",
+    password="sudan1",
+    host="localhost",
+    database="todo",
+    port=5432
+)
+
+engine = create_engine(url)
+Session = sessionmaker(bind=engine)
+session = Session()
+
+Base = declarative_base()
+
+class Cases(Base):
+    __tablename__ = "cases"
+
+    id = Column(Integer, primary_key=True)
+    start_date = Column(Date)
+    end_date = Column(Date)
+    city = Column(String)
+    problem_description = Column(Text)
+    problem_population_density = Column(Integer)
+    problem_population = Column(Integer)
+    problem_age_distribution = Column(SmallInteger)
+    problem_number_of_active_cases = Column(Integer)
+    problem_number_of_severe_active_cases = Column(Integer)
+    problem_number_of_deaths = Column(Integer)
+    problem_vaccinated_population = Column(SmallInteger)
+    problem_infection_rate = Column(Float)
+    problem_mortality_rate = Column(Float)
+    problem_weather = Column(String)
+    solution_description = Column(Text)
+    solution_lockdown_policy_level = Column(Integer)
+    solution_mask_policy_level = Column(Integer)
+    solution_vaccine_policy_level = Column(Integer)
+    solution_effectiveness = Column(Integer)
+
+Base.metadata.create_all(engine)
