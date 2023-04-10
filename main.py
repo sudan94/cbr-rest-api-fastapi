@@ -41,53 +41,25 @@ app.add_middleware(
 async def create_case(case:Case):
 
     city_details = cityDetails.cities[case.city]
-    infection_rate = (case.problem_start_number_of_active_cases /
-                      city_details["population"]) * 100
-    mortality_rate = (case.problem_start_number_of_active_cases /
-                      city_details["population"]) * 100
-    age_distribution = categorize_age(city_details["median_age"])
-    density_distribution = categorize_density(
+    infection_rate = round((case.problem_start_number_of_active_cases /
+                      city_details["population"]) * 100, 2)
+    mortality_rate = round((case.problem_start_number_of_deaths /
+                      city_details["population"]) * 100, 2)
+    age_distribution, age_category = categorize_age(city_details["median_age"])
+    density_distribution, density_category = categorize_density(
         city_details["median_age"], city_details["population"])
     effectivness = claculate_effectivness(case.problem_start_number_of_active_cases,
                                          case.problem_end_number_of_active_cases, case.problem_start_number_of_deaths, case.problem_end_number_of_deaths)
 
-    p_description = f'Currently, the population density in this area is {density_distribution}. The total population in the affected area is {city_details["population"]}, and it has a {age_distribution}. There are currently {case.problem_start_number_of_active_cases} active cases of the disease in the area, out of which {case.problem_start_number_of_icu_active_cases} are severe cases. Unfortunately, {case.problem_start_number_of_deaths} deaths have also been reported so far. The population in the affected area has not yet received any vaccination, as {case.problem_vaccinated_population}. The infection rate in this area is {infection_rate}, which is a positive sign. However, the mortality rate is {mortality_rate}, which is concerning. Therefore, it is crucial to take necessary precautions and measures to prevent the further spread of the disease and minimize the mortality rate.'
+    problem_vaccine_descrption = vaccine_policy(case.problem_vaccinated_population)
 
-    # Define the lockdown policy description based on the lockdown policy level
-    if case.solution_lockdown_policy_level == 0:
-        lockdown_policy_description = "No measures"
-    elif case.solution_lockdown_policy_level == 1:
-        lockdown_policy_description = "Recommend not leaving house"
-    elif case.solution_lockdown_policy_level == 2:
-        lockdown_policy_description = "Require not leaving house with exceptions for daily exercise, grocery shopping, and ‘essential’ trips"
-    else:
-        lockdown_policy_description = "Require not leaving house with minimal exceptions (e.g., allowed to leave only once every few days, or only one person can leave at a time, etc.)not implementing any lockdown policy."
+    p_description = f'Currently, the population density in this area is {density_category}. The total population in the affected area is {city_details["population"]}, and it has a {age_category} age distribution. There are currently {case.problem_start_number_of_active_cases} active cases of the disease in the area, out of which {case.problem_start_number_of_icu_active_cases} are severe cases. {case.problem_start_number_of_deaths} deaths have also been reported so far. The vaccination are {problem_vaccine_descrption}. The infection rate in this area is {infection_rate} and the mortality rate is {mortality_rate}.'
 
-    # Define the mask policy description based on the mask policy level
-    if case.solution_mask_policy_level == 0:
-        mask_policy_description = "No measure"
-    elif case.solution_mask_policy_level == 1:
-        mask_policy_description = "Recommended"
-    elif case.solution_mask_policy_level == 2:
-        mask_policy_description = " Required in some specified shared/public spaces outside the home with other people present, or some situations when social distancing not possible."
-    elif case.solution_mask_policy_level == 3:
-        mask_policy_description = "Required in all shared/public spaces outside the home with other people present or all situations when social distancing not possible"
-    else:
-        mask_policy_description = "Required outside the home at all times, regardless of location or presence of other people."
+    lockdown_policy_description = lockdown_policy(case.solution_lockdown_policy_level)
+    mask_policy_description = mask_policy(case.solution_mask_policy_level)
+    vaccine_policy_description = vaccine_policy(case.solution_vaccine_policy_level)
 
-    # Define the vaccine policy description based on the mask policy level
-    if case.solution_vaccine_policy_level == 0:
-        vaccine_policy_description = "No availability"
-    elif case.solution_vaccine_policy_level == 1:
-        vaccine_policy_description = "Availability for ONE of the following: key workers/ clinically vulnerable groups / elderly groups"
-    elif case.solution_vaccine_policy_level == 2:
-        vaccine_policy_description = "Availability for TWO of the following: key workers/ clinically vulnerable groups / elderly groups"
-    elif case.solution_vaccine_policy_level == 3:
-        vaccine_policy_description = " Availability for ALL the following: key workers/ clinically vulnerable groups / elderly groups"
-    else:
-        vaccine_policy_description = "Availability for all three, plus partial additional availability (select broad groups/ages)"
-
-    solution_description_template = f'In a scenario where the population density is {density_distribution}, age distribution is {age_distribution}, infection rate is {infection_rate}, and mortality rate is {mortality_rate}, with {case.problem_start_number_of_active_cases} severe active cases, it is recommended to take necessary precautions to prevent the further spread of the disease. Furthermore, it is recommended to implement a Level {case.solution_lockdown_policy_level} lockdown policy, which involves {lockdown_policy_description}. A Level {case.solution_mask_policy_level} mask policy should also be implemented, requiring individuals to {mask_policy_description}. It is important to note that {vaccine_policy_description}.Overall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
+    solution_description_template = f'In a scenario where the population density is {density_category}, age distribution is {age_category}, infection rate is {infection_rate}, and mortality rate is {mortality_rate}, with {case.problem_start_number_of_icu_active_cases} severe active cases, it is recommended to take necessary precautions to prevent the further spread of the disease. Furthermore, it is recommended to implement a Level {case.solution_lockdown_policy_level} lockdown policy, which involves {lockdown_policy_description}. A Level {case.solution_mask_policy_level} mask policy should also be implemented, requiring individuals to {mask_policy_description}. It is important to note that {vaccine_policy_description}.Overall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
 
     caseAdd = Cases(start_date=case.start_date,
                  end_date=case.end_date,
@@ -132,24 +104,24 @@ async def get_city_details(name: str):
 
 def categorize_age(medain_age):
     if (medain_age > 30):
-        return 3
+        return 3, "High"
     elif (medain_age >= 20 and medain_age <= 30):
-        return 2
+        return 2, "Moderate"
     elif (medain_age >= 1 and medain_age < 20):
-        return 1
+        return 1, "Low"
     else:
-        return 0
+        return 0, "Invalid"
 
 
 def categorize_density(density, population):
     if (population >= 50000 and density >= 1500):
-        return 3
+        return 3, "High"
     elif (population >= 5000 and density >= 300):
-        return 2
+        return 2, "Moderate"
     elif (density < 300):
-        return 1
+        return 1, "Low"
     else:
-        return 0
+        return 0, "Invalid"
 
 
 def claculate_effectivness(start_case, end_case, start_death, end_death):
@@ -163,9 +135,46 @@ def claculate_effectivness(start_case, end_case, start_death, end_death):
     else:
         return 0
 
+def lockdown_policy(level):
+     # Define the lockdown policy description based on the lockdown policy level
+    if level == 0:
+        lockdown_policy_description = "No measures"
+    elif level == 1:
+        lockdown_policy_description = "Recommend not leaving house"
+    elif level == 2:
+        lockdown_policy_description = "Require not leaving house with exceptions for daily exercise, grocery shopping, and ‘essential’ trips"
+    else:
+        lockdown_policy_description = "Require not leaving house with minimal exceptions (e.g., allowed to leave only once every few days, or only one person can leave at a time, etc.)not implementing any lockdown policy."
+    return lockdown_policy_description
 
-# def categorize_date(data):
-#     if(data['density'] > 1500)
+def mask_policy(level):
+    # Define the mask policy description based on the mask policy level
+    if level == 0:
+        mask_policy_description = "No measure"
+    elif level == 1:
+        mask_policy_description = "Recommended"
+    elif level == 2:
+        mask_policy_description = " Required in some specified shared/public spaces outside the home with other people present, or some situations when social distancing not possible."
+    elif level == 3:
+        mask_policy_description = "Required in all shared/public spaces outside the home with other people present or all situations when social distancing not possible"
+    else:
+        mask_policy_description = "Required outside the home at all times, regardless of location or presence of other people."
+    return mask_policy_description
+
+def vaccine_policy(level):
+        # Define the vaccine policy description based on the mask policy level
+    if level == 0:
+        vaccine_policy_description = "Not availability"
+    elif level == 1:
+        vaccine_policy_description = "Availability for ONE of the following: key workers/ clinically vulnerable groups / elderly groups"
+    elif level == 2:
+        vaccine_policy_description = "Availability for TWO of the following: key workers/ clinically vulnerable groups / elderly groups"
+    elif level == 3:
+        vaccine_policy_description = " Availability for ALL the following: key workers/ clinically vulnerable groups / elderly groups"
+    else:
+        vaccine_policy_description = "Availability for all three, plus partial additional availability (select broad groups/ages)"
+    return vaccine_policy_description
+
 
 
 # @app.put("/cases/update/{id}")
