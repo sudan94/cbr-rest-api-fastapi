@@ -9,7 +9,6 @@ def get_settings():
     return config.Settings()
 
 env = get_settings()
-print(env.POSTGRES_USER)
 
 url = URL.create(
     drivername=env.POSTGRES_DRIVERNMAE,
@@ -43,7 +42,7 @@ class Cases(Base):
     problem_end_number_of_icu_active_cases = Column(Integer)
     problem_start_number_of_deaths= Column(Integer)
     problem_end_number_of_deaths = Column(Integer)
-    problem_vaccinated_population = Column(SmallInteger)
+    problem_vaccinated_population = Column(Integer)
     problem_infection_rate = Column(Float)
     problem_mortality_rate = Column(Float)
     problem_weather = Column(String)
