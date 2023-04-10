@@ -20,6 +20,18 @@ class Case(BaseModel):
     solution_mask_policy_level: int
     solution_vaccine_policy_level: int
 
+class CaseRecommendation(BaseModel):
+    start_date: str
+    end_date: str
+    city: str
+    problem_start_number_of_active_cases: int
+    problem_end_number_of_active_cases: int
+    problem_start_number_of_icu_active_cases: int
+    problem_end_number_of_icu_active_cases: int
+    problem_start_number_of_deaths: int
+    problem_end_number_of_deaths: int
+    problem_vaccinated_population: int
+
 
 app = FastAPI()
 
@@ -193,7 +205,7 @@ def find_similar_cases_by_distance(new_problem, case_library, k=1, distance_metr
     def numerical_distance(case1, case2):
         # select numerical features to normalize
         numerical_features = ['problem_population', 'problem_start_number_of_active_cases','problem_end_number_of_active_cases', 'problem_start_number_of_icu_active_cases',
-                              'problem_end_number_of_icu_active_cases', 'problem_start_number_of_deaths','problem_end_number_of_deaths', 'problem_vaccinated_population', 'solution_lockdown_policy_level','solution_mask_policy_level','solution_vaccine_policy_level']
+                              'problem_end_number_of_icu_active_cases', 'problem_start_number_of_deaths','problem_end_number_of_deaths', 'problem_vaccinated_population']
 
         # extract numerical features from inputs
         case1_num = np.array([case1[f] for f in numerical_features])
@@ -229,7 +241,7 @@ def find_similar_cases_by_distance(new_problem, case_library, k=1, distance_metr
     return most_similar_cases
 
 @app.post("/recommendation")
-def recommendation(case: Case):
+def recommendation(case: CaseRecommendation):
     city_details = cityDetails.cities[case.city]
     a = case.__dict__
     a['problem_population'] =city_details['population']
@@ -275,9 +287,9 @@ def recommendation(case: Case):
                     problem_mortality_rate=mortality_rate,
                     problem_weather="TBD",
                     solution_description=solution_description_template,
-                    solution_lockdown_policy_level=case.solution_lockdown_policy_level,
-                    solution_mask_policy_level=case.solution_mask_policy_level,
-                    solution_vaccine_policy_level=case.solution_vaccine_policy_level,
+                    solution_lockdown_policy_level=similar_data['solution_lockdown_policy_level'],
+                    solution_mask_policy_level=similar_data['solution_mask_policy_level'],
+                    solution_vaccine_policy_level=similar_data['solution_vaccine_policy_level'],
                     solution_effectiveness=effectivness)
 
     session.add(caseAdd)
