@@ -61,7 +61,7 @@ async def create_case(case: Case):
     density_distribution, density_category = categorize_density(
         city_details["median_age"], city_details["population"])
     effectivness = claculate_effectivness(case.problem_start_number_of_active_cases,
-                                          case.problem_end_number_of_active_cases, case.problem_start_number_of_deaths, case.problem_end_number_of_deaths)
+                                          case.problem_end_number_of_active_cases, case.problem_start_number_of_icu_active_cases, case.problem_end_number_of_icu_active_cases)
 
 
     p_description = f'Currently, the population density in this area is {density_category}. The total population in the affected area is {city_details["population"]}, and it has a {age_category} age distribution. There are currently {case.problem_start_number_of_active_cases} active cases of the disease in the area, out of which {case.problem_start_number_of_icu_active_cases} are severe cases. {case.problem_start_number_of_deaths} deaths have also been reported so far. The infection rate in this area is {infection_rate} and the mortality rate is {mortality_rate}.'
@@ -145,16 +145,16 @@ def categorize_density(density, population):
         return 0, "none"
 
 
-def claculate_effectivness(start_case, end_case, start_death, end_death):
-    diff_death = start_death - end_death
-    if end_case < start_case:
+def claculate_effectivness(start_case, end_case, start_icu, end_icu):
+    diff_icu = (start_icu - end_icu)/start_icu
+    diff_case = (start_case - end_case)/start_case
+    average_percentage = abs(((diff_icu * 100) + (diff_case * 100))/2)
+    if average_percentage > 70:
         return 3
-    elif end_case == start_case:
+    elif average_percentage > 50:
         return 2
-    elif end_case > start_case:
-        return 1
     else:
-        return 0
+        return 1
 
 
 def lockdown_policy(level):
@@ -256,7 +256,7 @@ def recommendation(case: CaseRecommendation):
     density_distribution, density_category = categorize_density(
         city_details["median_age"], city_details["population"])
     effectivness = claculate_effectivness(case.problem_start_number_of_active_cases,
-                                          case.problem_end_number_of_active_cases, case.problem_start_number_of_deaths, case.problem_end_number_of_deaths)
+                                          case.problem_end_number_of_active_cases, case.problem_start_number_of_icu_active_cases, case.problem_end_number_of_icu_active_cases)
 
 
     p_description = f'Currently, the population density in this area is {density_category}. The total population in the affected area is {city_details["population"]}, and it has a {age_category} age distribution. There are currently {case.problem_start_number_of_active_cases} active cases of the disease in the area, out of which {case.problem_start_number_of_icu_active_cases} are severe cases. {case.problem_start_number_of_deaths} deaths have also been reported so far. The infection rate in this area is {infection_rate} and the mortality rate is {mortality_rate}.'
