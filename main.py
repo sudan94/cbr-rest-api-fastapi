@@ -5,6 +5,7 @@ import cityDetails
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 
+
 class Case(BaseModel):
     start_date: str
     end_date: str
@@ -16,9 +17,12 @@ class Case(BaseModel):
     problem_start_number_of_deaths: int
     problem_end_number_of_deaths: int
     problem_vaccinated_population: int
+    problem_average_temprature: float
+    problem_average_humidity: float
     solution_lockdown_policy_level: int
     solution_mask_policy_level: int
     solution_vaccine_policy_level: int
+
 
 class CaseRecommendation(BaseModel):
     start_date: str
@@ -31,6 +35,8 @@ class CaseRecommendation(BaseModel):
     problem_start_number_of_deaths: int
     problem_end_number_of_deaths: int
     problem_vaccinated_population: int
+    problem_average_temprature: float
+    problem_average_humidity: float
 
 
 app = FastAPI()
@@ -49,6 +55,11 @@ app.add_middleware(
 )
 
 
+@app.get("/cases")
+async def get_all_cases():
+    cases_query = session.query(Cases)
+    return ({"data": cases_query.all()})
+
 @app.post("/cases/create")
 async def create_case(case: Case):
 
@@ -60,17 +71,16 @@ async def create_case(case: Case):
     age_distribution, age_category = categorize_age(city_details["median_age"])
     density_distribution, density_category = categorize_density(
         city_details["median_age"], city_details["population"])
-    effectivness = claculate_effectivness(case.problem_start_number_of_active_cases,
-                                          case.problem_end_number_of_active_cases, case.problem_start_number_of_icu_active_cases, case.problem_end_number_of_icu_active_cases)
-
-
-    p_description = f'Currently, the population density in this area is {density_category}. The total population in the affected area is {city_details["population"]}, and it has a {age_category} age distribution. There are currently {case.problem_start_number_of_active_cases} active cases of the disease in the area, out of which {case.problem_start_number_of_icu_active_cases} are severe cases. {case.problem_start_number_of_deaths} deaths have also been reported so far. The infection rate in this area is {infection_rate} and the mortality rate is {mortality_rate}.'
+    effectivness = claculate_effectivness(case.problem_start_number_of_active_cases, case.problem_end_number_of_active_cases,
+                                          case.problem_start_number_of_icu_active_cases, case.problem_end_number_of_icu_active_cases)
 
     lockdown_policy_description = lockdown_policy(
         case.solution_lockdown_policy_level)
     mask_policy_description = mask_policy(case.solution_mask_policy_level)
     vaccine_policy_description = vaccine_policy(
         case.solution_vaccine_policy_level)
+
+    p_description = f'Currently, the population density in this area is {density_category}. The total population in the affected area is {city_details["population"]}, and it has a {age_category} age distribution. There are currently {case.problem_start_number_of_active_cases} active cases of the disease in the area, out of which {case.problem_start_number_of_icu_active_cases} are severe cases. {case.problem_start_number_of_deaths} deaths have also been reported so far. The infection rate in this area is {infection_rate} and the mortality rate is {mortality_rate}.'
 
     solution_description_template = f'In a scenario where the population density is {density_category}, age distribution is {age_category}, infection rate is {infection_rate}, and mortality rate is {mortality_rate}, with {case.problem_start_number_of_icu_active_cases} severe active cases. It is recommended to implement a Level {case.solution_lockdown_policy_level} lockdown policy, which involves {lockdown_policy_description}. A Level {case.solution_mask_policy_level} mask policy should also be implemented, individuals {mask_policy_description}. It is important to note that {vaccine_policy_description}.Overall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
 
@@ -90,7 +100,8 @@ async def create_case(case: Case):
                     problem_vaccinated_population=case.problem_vaccinated_population,
                     problem_infection_rate=infection_rate,
                     problem_mortality_rate=mortality_rate,
-                    problem_weather="TBD",
+                    problem_average_temprature=case.problem_average_temprature,
+                    problem_average_humidity=case.problem_average_humidity,
                     solution_description=solution_description_template,
                     solution_lockdown_policy_level=case.solution_lockdown_policy_level,
                     solution_mask_policy_level=case.solution_mask_policy_level,
@@ -102,13 +113,6 @@ async def create_case(case: Case):
     cases_query = session.query(Cases)
     cases_query.all()
     return {"status": caseAdd}
-
-
-@app.get("/cases")
-async def get_all_cases():
-    cases_query = session.query(Cases)
-    return ({"data": cases_query.all()})
-
 
 def get_cases():
     all_cases = []
@@ -204,8 +208,8 @@ def find_similar_cases_by_distance(new_problem, case_library, k=1, distance_metr
     # define distance function for numerical features
     def numerical_distance(case1, case2):
         # select numerical features to normalize
-        numerical_features = ['problem_population', 'problem_start_number_of_active_cases','problem_end_number_of_active_cases', 'problem_start_number_of_icu_active_cases',
-                              'problem_end_number_of_icu_active_cases', 'problem_start_number_of_deaths','problem_end_number_of_deaths', 'problem_vaccinated_population']
+        numerical_features = ['problem_population', 'problem_start_number_of_active_cases', 'problem_end_number_of_active_cases', 'problem_start_number_of_icu_active_cases',
+                              'problem_end_number_of_icu_active_cases', 'problem_start_number_of_deaths', 'problem_end_number_of_deaths', 'problem_vaccinated_population']
 
         # extract numerical features from inputs
         case1_num = np.array([case1[f] for f in numerical_features])
@@ -235,17 +239,20 @@ def find_similar_cases_by_distance(new_problem, case_library, k=1, distance_metr
     most_similar_cases = []
     for i in range(k):
         case_id = distances[i][0]
-        case = next((case for case in case_library if case['id'] == case_id), None)
+        case = next(
+            (case for case in case_library if case['id'] == case_id), None)
         most_similar_cases.append(case)
 
     return most_similar_cases
+
 
 @app.post("/recommendation")
 def recommendation(case: CaseRecommendation):
     city_details = cityDetails.cities[case.city]
     a = case.__dict__
-    a['problem_population'] =city_details['population']
-    similar_data = find_similar_cases_by_distance(a,get_cases(), 1, 'euclidean')[0]
+    a['problem_population'] = city_details['population']
+    similar_data = find_similar_cases_by_distance(
+        a, get_cases(), 1, 'euclidean')[0]
     print(similar_data['city'])
 
     infection_rate = round((case.problem_start_number_of_active_cases /
@@ -258,12 +265,12 @@ def recommendation(case: CaseRecommendation):
     effectivness = claculate_effectivness(case.problem_start_number_of_active_cases,
                                           case.problem_end_number_of_active_cases, case.problem_start_number_of_icu_active_cases, case.problem_end_number_of_icu_active_cases)
 
-
     p_description = f'Currently, the population density in this area is {density_category}. The total population in the affected area is {city_details["population"]}, and it has a {age_category} age distribution. There are currently {case.problem_start_number_of_active_cases} active cases of the disease in the area, out of which {case.problem_start_number_of_icu_active_cases} are severe cases. {case.problem_start_number_of_deaths} deaths have also been reported so far. The infection rate in this area is {infection_rate} and the mortality rate is {mortality_rate}.'
 
     lockdown_policy_description = lockdown_policy(
         similar_data['solution_lockdown_policy_level'])
-    mask_policy_description = mask_policy(similar_data['solution_mask_policy_level'])
+    mask_policy_description = mask_policy(
+        similar_data['solution_mask_policy_level'])
     vaccine_policy_description = vaccine_policy(
         similar_data['solution_vaccine_policy_level'])
 
@@ -285,7 +292,8 @@ def recommendation(case: CaseRecommendation):
                     problem_vaccinated_population=case.problem_vaccinated_population,
                     problem_infection_rate=infection_rate,
                     problem_mortality_rate=mortality_rate,
-                    problem_weather="TBD",
+                    problem_average_temprature=case.problem_average_temprature,
+                    problem_average_humidity=case.problem_average_humidity,
                     solution_description=solution_description_template,
                     solution_lockdown_policy_level=similar_data['solution_lockdown_policy_level'],
                     solution_mask_policy_level=similar_data['solution_mask_policy_level'],
@@ -295,7 +303,7 @@ def recommendation(case: CaseRecommendation):
     session.add(caseAdd)
     session.commit()
     cases_query = session.query(Cases)
-    return ({"data":solution_description_template})
+    return ({"data": solution_description_template})
 
 # @app.put("/cases/update/{id}")
 # async def update_todo(
@@ -310,6 +318,7 @@ def recommendation(case: CaseRecommendation):
 #     todo.is_done = is_complete
 #     session.add(todo)
 #     session.commit()
+
 
 @app.delete("/cases/delete/{id}")
 async def delete_case(id: int):
