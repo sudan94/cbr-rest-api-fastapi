@@ -1,11 +1,10 @@
 from fastapi import FastAPI
-from models import Cases, session
+from models import Cases, session, Recommendation
 from pydantic import BaseModel
 import cityDetails
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
-
-
+import categorize
 class Case(BaseModel):
     start_date: str
     end_date: str
@@ -22,8 +21,6 @@ class Case(BaseModel):
     solution_lockdown_policy_level: int
     solution_mask_policy_level: int
     solution_vaccine_policy_level: int
-
-
 class CaseRecommendation(BaseModel):
     start_date: str
     end_date: str
@@ -38,9 +35,7 @@ class CaseRecommendation(BaseModel):
     problem_average_temprature: float
     problem_average_humidity: float
 
-
 app = FastAPI()
-
 origins = [
     "http://localhost:3000",
     "https://cbr-covid.netlify.app"
@@ -54,11 +49,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/cases")
 async def get_all_cases():
     cases_query = session.query(Cases)
     return ({"data": cases_query.all()})
+
+def get_cases():
+    all_cases = []
+    cases_query = session.query(Cases)
+    for i in cases_query.all():
+        all_cases.append(i.__dict__)
+    return all_cases
+
+@app.get("/cityDetails/{name}")
+async def get_city_details(name: str):
+    a = cityDetails.cities[name]
+    return a["population"]
 
 @app.post("/cases/create")
 async def create_case(case: Case):
@@ -68,16 +74,16 @@ async def create_case(case: Case):
                             city_details["population"]) * 100, 2)
     mortality_rate = round((case.problem_start_number_of_deaths /
                             city_details["population"]) * 100, 2)
-    age_distribution, age_category = categorize_age(city_details["median_age"])
-    density_distribution, density_category = categorize_density(
+    age_distribution, age_category = categorize.categorize_age(city_details["median_age"])
+    density_distribution, density_category = categorize.categorize_density(
         city_details["median_age"], city_details["population"])
-    effectivness = claculate_effectivness(case.problem_start_number_of_active_cases, case.problem_end_number_of_active_cases,
+    effectivness = categorize.claculate_effectivness(case.problem_start_number_of_active_cases, case.problem_end_number_of_active_cases,
                                           case.problem_start_number_of_icu_active_cases, case.problem_end_number_of_icu_active_cases)
 
-    lockdown_policy_description = lockdown_policy(
+    lockdown_policy_description = categorize.lockdown_policy(
         case.solution_lockdown_policy_level)
-    mask_policy_description = mask_policy(case.solution_mask_policy_level)
-    vaccine_policy_description = vaccine_policy(
+    mask_policy_description = categorize.mask_policy(case.solution_mask_policy_level)
+    vaccine_policy_description = categorize.vaccine_policy(
         case.solution_vaccine_policy_level)
 
     p_description = f'Currently, the population density in this area is {density_category}. The total population in the affected area is {city_details["population"]}, and it has a {age_category} age distribution. There are currently {case.problem_start_number_of_active_cases} active cases of the disease in the area, out of which {case.problem_start_number_of_icu_active_cases} are severe cases. {case.problem_start_number_of_deaths} deaths have also been reported so far. The infection rate in this area is {infection_rate} and the mortality rate is {mortality_rate}.'
@@ -112,99 +118,9 @@ async def create_case(case: Case):
     session.commit()
     cases_query = session.query(Cases)
     cases_query.all()
-    return {"status": caseAdd}
+    return {"result": caseAdd}
 
-def get_cases():
-    all_cases = []
-    cases_query = session.query(Cases)
-    for i in cases_query.all():
-        all_cases.append(i.__dict__)
-    return all_cases
-
-@app.get("/cityDetails/{name}")
-async def get_city_details(name: str):
-    a = cityDetails.cities[name]
-    return a["population"]
-
-
-def categorize_age(medain_age):
-    if (medain_age > 30):
-        return 3, "high"
-    elif (medain_age >= 20 and medain_age <= 30):
-        return 2, "moderate"
-    elif (medain_age >= 1 and medain_age < 20):
-        return 1, "low"
-    else:
-        return 0, "none"
-
-
-def categorize_density(density, population):
-    if (population >= 50000 and density >= 1500):
-        return 3, "high"
-    elif (population >= 5000 and density >= 300):
-        return 2, "moderate"
-    elif (density < 300):
-        return 1, "low"
-    else:
-        return 0, "none"
-
-
-def claculate_effectivness(start_case, end_case, start_icu, end_icu):
-    diff_icu = (start_icu - end_icu)/start_icu
-    diff_case = (start_case - end_case)/start_case
-    average_percentage = abs(((diff_icu * 100) + (diff_case * 100))/2)
-    if average_percentage > 70:
-        return 3
-    elif average_percentage > 50:
-        return 2
-    else:
-        return 1
-
-
-def lockdown_policy(level):
-    # Define the lockdown policy description based on the lockdown policy level
-    if level == 0:
-        lockdown_policy_description = "no lockdown measures"
-    elif level == 1:
-        lockdown_policy_description = "recommend not leaving house"
-    elif level == 2:
-        lockdown_policy_description = "require not leaving house with exceptions for daily exercise, grocery shopping, and ‘essential’ trips"
-    else:
-        lockdown_policy_description = "require not leaving house with minimal exceptions (e.g., allowed to leave only once every few days, or only one person can leave at a time, etc.)not implementing any lockdown policy."
-    return lockdown_policy_description
-
-
-def mask_policy(level):
-    # Define the mask policy description based on the mask policy level
-    if level == 0:
-        mask_policy_description = "not required to wear mask"
-    elif level == 1:
-        mask_policy_description = "recommended to wear mask"
-    elif level == 2:
-        mask_policy_description = " required mask in some specified shared/public spaces outside the home with other people present, or some situations when social distancing not possible."
-    elif level == 3:
-        mask_policy_description = "required mask in all shared/public spaces outside the home with other people present or all situations when social distancing not possible"
-    else:
-        mask_policy_description = "required mask outside the home at all times, regardless of location or presence of other people."
-    return mask_policy_description
-
-
-def vaccine_policy(level):
-    # Define the vaccine policy description based on the mask policy level
-    if level == 0:
-        vaccine_policy_description = "vaccination not avilable"
-    elif level == 1:
-        vaccine_policy_description = "vaccination avilable for ONE of the following: key workers/ clinically vulnerable groups / elderly groups"
-    elif level == 2:
-        vaccine_policy_description = "vaccination avilable for TWO of the following: key workers/ clinically vulnerable groups / elderly groups"
-    elif level == 3:
-        vaccine_policy_description = "vaccination avilable for ALL the following: key workers/ clinically vulnerable groups / elderly groups"
-    else:
-        vaccine_policy_description = "vaccination avilable for all three, plus partial additional availability (select broad groups/ages)"
-    return vaccine_policy_description
-
-
-def find_similar_cases_by_distance(new_problem, case_library, k=1, distance_metric='euclidean'):
+def find_similar_cases_by_distance(new_problem, case_library, k=4, distance_metric='euclidean'):
     # define distance function for numerical features
     def numerical_distance(case1, case2):
         # select numerical features to normalize
@@ -245,38 +161,37 @@ def find_similar_cases_by_distance(new_problem, case_library, k=1, distance_metr
 
     return most_similar_cases
 
-
 @app.post("/recommendation")
 def recommendation(case: CaseRecommendation):
     city_details = cityDetails.cities[case.city]
     a = case.__dict__
     a['problem_population'] = city_details['population']
-    similar_data = find_similar_cases_by_distance(
-        a, get_cases(), 1, 'euclidean')[0]
-    print(similar_data['city'])
+    all_similar_date = find_similar_cases_by_distance(
+        a, get_cases(), 4, 'euclidean')
+    similar_data = all_similar_date[0]
 
     infection_rate = round((case.problem_start_number_of_active_cases /
                             city_details["population"]) * 100, 2)
     mortality_rate = round((case.problem_start_number_of_deaths /
                             city_details["population"]) * 100, 2)
-    age_distribution, age_category = categorize_age(city_details["median_age"])
-    density_distribution, density_category = categorize_density(
+    age_distribution, age_category = categorize.categorize_age(city_details["median_age"])
+    density_distribution, density_category = categorize.categorize_density(
         city_details["median_age"], city_details["population"])
-    effectivness = claculate_effectivness(case.problem_start_number_of_active_cases,
+    effectivness = categorize.claculate_effectivness(case.problem_start_number_of_active_cases,
                                           case.problem_end_number_of_active_cases, case.problem_start_number_of_icu_active_cases, case.problem_end_number_of_icu_active_cases)
 
     p_description = f'Currently, the population density in this area is {density_category}. The total population in the affected area is {city_details["population"]}, and it has a {age_category} age distribution. There are currently {case.problem_start_number_of_active_cases} active cases of the disease in the area, out of which {case.problem_start_number_of_icu_active_cases} are severe cases. {case.problem_start_number_of_deaths} deaths have also been reported so far. The infection rate in this area is {infection_rate} and the mortality rate is {mortality_rate}.'
 
-    lockdown_policy_description = lockdown_policy(
+    lockdown_policy_description = categorize.lockdown_policy(
         similar_data['solution_lockdown_policy_level'])
-    mask_policy_description = mask_policy(
+    mask_policy_description = categorize.mask_policy(
         similar_data['solution_mask_policy_level'])
-    vaccine_policy_description = vaccine_policy(
+    vaccine_policy_description = categorize.vaccine_policy(
         similar_data['solution_vaccine_policy_level'])
 
     solution_description_template = f'In a scenario where the population density is {density_category}, age distribution is {age_category}, infection rate is {infection_rate}, and mortality rate is {mortality_rate}, with {case.problem_start_number_of_icu_active_cases} severe active cases. It is recommended to implement a Level {similar_data["solution_lockdown_policy_level"]} lockdown policy, which involves {lockdown_policy_description}. A Level {similar_data["solution_mask_policy_level"]} mask policy should also be implemented, individuals {mask_policy_description}. It is important to note that {vaccine_policy_description}.Overall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
 
-    caseAdd = Cases(start_date=case.start_date,
+    caseAdd = Recommendation(start_date=case.start_date,
                     end_date=case.end_date,
                     city=case.city,
                     problem_description=p_description,
@@ -302,8 +217,13 @@ def recommendation(case: CaseRecommendation):
 
     session.add(caseAdd)
     session.commit()
-    cases_query = session.query(Cases)
-    return ({"data": solution_description_template})
+    cases_query = session.query(Recommendation)
+    return ({"recommendation": solution_description_template,
+             "most_similar":[{
+                "top_1" : all_similar_date[1]['solution_description'],
+                "top_2" : all_similar_date[2]['solution_description'],
+                "top_3" : all_similar_date[3]['solution_description'],
+             }]})
 
 # @app.put("/cases/update/{id}")
 # async def update_todo(
