@@ -38,7 +38,7 @@ def claculate_effectivness(start_case, end_case, start_icu, end_icu):
     else:
         if abs(average_perecentage) > 70 or abs(average_perecentage) == 0:
             return 3
-        elif abs(average_perecentage) > 50:
+        elif abs(average_perecentage) > 50 and abs(average_perecentage) <=70:
             return 2
         else:
             return 1
@@ -46,39 +46,39 @@ def claculate_effectivness(start_case, end_case, start_icu, end_icu):
 def lockdown_policy(level):
     # Define the lockdown policy description based on the lockdown policy level
     if level == 0:
-        lockdown_policy_description = "no lockdown measures"
+        lockdown_policy_description = "(no lockdown measures)"
     elif level == 1:
-        lockdown_policy_description = "recommend not leaving house"
+        lockdown_policy_description = "(recommend not leaving house)"
     elif level == 2:
-        lockdown_policy_description = "require not leaving house with exceptions for daily exercise, grocery shopping, and ‘essential’ trips"
+        lockdown_policy_description = "(require not leaving house with exceptions for daily exercise, grocery shopping, and ‘essential’ trips)"
     else:
-        lockdown_policy_description = "require not leaving house with minimal exceptions (e.g., allowed to leave only once every few days, or only one person can leave at a time, etc.)not implementing any lockdown policy."
+        lockdown_policy_description = "(require not leaving house with minimal exceptions (e.g., allowed to leave only once every few days, or only one person can leave at a time, etc.)not implementing any lockdown policy)"
     return lockdown_policy_description
 
 def mask_policy(level):
     # Define the mask policy description based on the mask policy level
     if level == 0:
-        mask_policy_description = "not required to wear mask"
+        mask_policy_description = "(not required to wear mask)"
     elif level == 1:
-        mask_policy_description = "recommended to wear mask"
+        mask_policy_description = "(recommended to wear mask)"
     elif level == 2:
-        mask_policy_description = " required mask in some specified shared/public spaces outside the home with other people present, or some situations when social distancing not possible."
+        mask_policy_description = "(required mask in some specified shared/public spaces outside the home with other people present, or some situations when social distancing not possible)"
     elif level == 3:
-        mask_policy_description = "required mask in all shared/public spaces outside the home with other people present or all situations when social distancing not possible"
+        mask_policy_description = "(required mask in all shared/public spaces outside the home with other people present or all situations when social distancing not possible)"
     else:
-        mask_policy_description = "required mask outside the home at all times, regardless of location or presence of other people."
+        mask_policy_description = "(required mask outside the home at all times, regardless of location or presence of other people)"
     return mask_policy_description
 
 def vaccine_policy(level):
     # Define the vaccine policy description based on the mask policy level
     if level == 0:
-        vaccine_policy_description = "vaccination not avilable"
+        vaccine_policy_description = "(vaccination not avilable)"
     elif level == 1:
-        vaccine_policy_description = "vaccination avilable for ONE of the following: key workers/ clinically vulnerable groups / elderly groups"
+        vaccine_policy_description = "(vaccination avilable for ONE of the following: key workers/ clinically vulnerable groups / elderly groups)"
     elif level == 2:
-        vaccine_policy_description = "vaccination avilable for TWO of the following: key workers/ clinically vulnerable groups / elderly groups"
+        vaccine_policy_description = "(vaccination avilable for TWO of the following: key workers/ clinically vulnerable groups / elderly groups)"
     elif level == 3:
-        vaccine_policy_description = "vaccination avilable for ALL the following: key workers/ clinically vulnerable groups / elderly groups"
+        vaccine_policy_description = "(vaccination avilable for all the following: key workers/ clinically vulnerable groups / elderly groups)"
     else:
-        vaccine_policy_description = "vaccination avilable for all three, plus partial additional availability (select broad groups/ages)"
+        vaccine_policy_description = "(vaccination avilable for all three, plus partial additional availability *select broad groups/ages*)"
     return vaccine_policy_description
