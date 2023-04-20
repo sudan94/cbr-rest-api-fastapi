@@ -3,8 +3,8 @@ from models import Cases, session, Recommendation
 from pydantic import BaseModel
 import cityDetails
 from fastapi.middleware.cors import CORSMiddleware
-import numpy as np
 import categorize
+import similarity
 class Case(BaseModel):
     start_date: str
     end_date: str
@@ -61,11 +61,6 @@ def get_cases():
         all_cases.append(i.__dict__)
     return all_cases
 
-@app.get("/cityDetails/{name}")
-async def get_city_details(name: str):
-    a = cityDetails.cities[name]
-    return a["population"]
-
 @app.post("/cases/create")
 async def create_case(case: Case):
 
@@ -120,53 +115,43 @@ async def create_case(case: Case):
     cases_query.all()
     return {"result": caseAdd}
 
-def find_similar_cases_by_distance(new_problem, case_library, k=4, distance_metric='euclidean'):
-    # define distance function for numerical features
-    def numerical_distance(case1, case2):
-        # select numerical features to normalize
-        numerical_features = ['problem_population', 'problem_start_number_of_active_cases', 'problem_end_number_of_active_cases', 'problem_start_number_of_icu_active_cases',
-                              'problem_end_number_of_icu_active_cases', 'problem_start_number_of_deaths', 'problem_end_number_of_deaths', 'problem_vaccinated_population']
 
-        # extract numerical features from inputs
-        case1_num = np.array([case1[f] for f in numerical_features])
-        case2_num = np.array([case2[f] for f in numerical_features])
 
-        # calculate z-score normalization for both vectors
-        case1_norm = (case1_num - np.mean(case1_num)) / np.std(case1_num)
-        case2_norm = (case2_num - np.mean(case2_num)) / np.std(case2_num)
 
-        # calculate Euclidean distance between the normalized vectors
-        distance = np.linalg.norm(case1_norm - case2_norm)
 
-        # return distance
-        return distance
+# @app.put("/cases/update/{id}")
+# async def update_todo(
+#     id: int,
+#     new_text: str = "",
+#     is_complete: bool = False
+# ):
+#     todo_query = session.query(Todo).filter(Todo.id==id)
+#     todo = todo_query.first()
+#     if new_text:
+#         todo.text = new_text
+#     todo.is_done = is_complete
+#     session.add(todo)
+#     session.commit()
 
-    # compute distance between new problem and each case in the case library
-    distances = []
-    for case in case_library:
-        if distance_metric == 'euclidean':
-            num_distance = numerical_distance(new_problem, case)
-            distances.append((case['id'], num_distance))
 
-    # sort distances in ascending order
-    distances.sort(key=lambda x: x[1])
+@app.delete("/cases/delete/{id}")
+async def delete_case(id: int):
+    case = session.query(Cases).filter(Cases.id == id).first()
+    session.delete(case)
+    session.commit()
+    return {"case deleted": case.id}
 
-    # return the k most similar cases
-    most_similar_cases = []
-    for i in range(k):
-        case_id = distances[i][0]
-        case = next(
-            (case for case in case_library if case['id'] == case_id), None)
-        most_similar_cases.append(case)
-
-    return most_similar_cases
+@app.get("/recommendation")
+async def get_all_recommendation():
+    recommendation_query = session.query(Recommendation)
+    return ({"result": recommendation_query.all()})
 
 @app.post("/recommendation")
 def recommendation(case: CaseRecommendation):
     city_details = cityDetails.cities[case.city]
     a = case.__dict__
     a['problem_population'] = city_details['population']
-    all_similar_date = find_similar_cases_by_distance(
+    all_similar_date = similarity.find_similar_cases_by_distance(
         a, get_cases(), 4, 'euclidean')
     similar_data = all_similar_date[0]
 
@@ -225,24 +210,14 @@ def recommendation(case: CaseRecommendation):
                 "top_3" : all_similar_date[3]['solution_description'],
              }]})
 
-# @app.put("/cases/update/{id}")
-# async def update_todo(
-#     id: int,
-#     new_text: str = "",
-#     is_complete: bool = False
-# ):
-#     todo_query = session.query(Todo).filter(Todo.id==id)
-#     todo = todo_query.first()
-#     if new_text:
-#         todo.text = new_text
-#     todo.is_done = is_complete
-#     session.add(todo)
-#     session.commit()
-
-
-@app.delete("/cases/delete/{id}")
-async def delete_case(id: int):
-    case = session.query(Cases).filter(Cases.id == id).first()
+@app.delete("/recommendation/{id}")
+async def delete_recommendation(id: int):
+    case = session.query(Recommendation).filter(Recommendation.id == id).first()
     session.delete(case)
     session.commit()
-    return {"case deleted": case.id}
+    return {"Recommendation deleted": case.id}
+
+@app.get("/cityDetails/{name}")
+async def get_city_details(name: str):
+    city = cityDetails.cities[name]
+    return city

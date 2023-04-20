@@ -19,15 +19,29 @@ def categorize_age(medain_age):
         return 0, "none"
 
 def claculate_effectivness(start_case, end_case, start_icu, end_icu):
-    diff_icu = (start_icu - end_icu)/start_icu
-    diff_case = (start_case - end_case)/start_case
-    average_percentage = abs(((diff_icu * 100) + (diff_case * 100))/2)
-    if average_percentage > 70:
-        return 3
-    elif average_percentage > 50:
-        return 2
+    if start_case == 0 and end_case !=0:
+        percentage_change_case = end_case /(start_case + end_case) *100
+    elif start_case ==0 and end_case == 0:
+        percentage_change_case = 0
     else:
+        percentage_change_case = ((end_case - start_case) / start_case) * 100
+    if start_icu ==0 and end_icu != 0:
+        percentage_change_icu = end_icu / (start_icu + end_case) * 100
+    elif start_icu == 0 and end_icu == 0:
+        percentage_change_icu =0
+    else:
+        percentage_change_icu = ((end_icu - start_icu) / start_icu) * 100
+    average_perecentage = percentage_change_case + percentage_change_icu /2
+
+    if average_perecentage > 0:
         return 1
+    else:
+        if abs(average_perecentage) > 70 or abs(average_perecentage) == 0:
+            return 3
+        elif abs(average_perecentage) > 50:
+            return 2
+        else:
+            return 1
 
 def lockdown_policy(level):
     # Define the lockdown policy description based on the lockdown policy level
