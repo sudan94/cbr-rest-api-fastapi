@@ -114,7 +114,11 @@ async def create_case(case: Case):
                     solution_effectiveness=effectivness)
 
     session.add(caseAdd)
-    session.commit()
+    try:
+        session.commit()
+    except:
+        session.rollback()
+        raise
     cases_query = session.query(Cases)
     cases_query.all()
     return {"result": caseAdd}
