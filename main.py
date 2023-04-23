@@ -149,11 +149,6 @@ async def get_all_recommendation():
 @app.post("/recommendation")
 def recommendation(case: CaseRecommendation):
     city_details = cityDetails.cities[case.city]
-    a = case.__dict__
-    a['problem_population'] = city_details['population']
-    all_similar_date = similarity.find_similar_cases_by_distance(
-        a, get_cases(), 4, 'euclidean')
-    similar_data = all_similar_date[0]
 
     infection_rate = round((case.problem_start_number_of_active_cases /
                             city_details["population"]) * 100, 2)
@@ -166,6 +161,16 @@ def recommendation(case: CaseRecommendation):
                                           case.problem_end_number_of_active_cases, case.problem_start_number_of_icu_active_cases, case.problem_end_number_of_icu_active_cases)
 
     p_description = f'Currently, the population density in this area is **{density_category}**. The total population in the affected area is **{city_details["population"]}**, and it has a **{age_category}** age distribution. There are currently **{case.problem_start_number_of_active_cases}** active cases of the disease in the area, out of which **{case.problem_start_number_of_icu_active_cases}** are severe cases. **{case.problem_start_number_of_deaths}** deaths have also been reported so far. The infection rate in this area is **{infection_rate} percentage** and the mortality rate is **{mortality_rate} percentage**.'
+
+    new_problem = case.__dict__
+    new_problem['problem_population'] = city_details['population']
+    new_problem['problem_age_distribution'] = age_distribution
+    new_problem['problem_mortality_rate'] = mortality_rate
+    new_problem['problem_infection_rate'] = infection_rate
+
+    all_similar_date = similarity.find_similar_cases_by_distance(
+        new_problem, get_cases(), 4, 'euclidean')
+    similar_data = all_similar_date[0]
 
     lockdown_policy_description = categorize.lockdown_policy(
         similar_data['solution_lockdown_policy_level'])
