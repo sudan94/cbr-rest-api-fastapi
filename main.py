@@ -49,6 +49,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/health")
+async def health():
+    return ({"ok"})
+
 @app.get("/cases")
 async def get_all_cases():
     cases_query = session.query(Cases)
