@@ -152,6 +152,8 @@ async def get_all_recommendation():
 
 @app.post("/recommendation")
 def recommendation(case: CaseRecommendation):
+    if len(get_cases()) < 4:
+        return ({"result":"Not enough cases. At least 4 cases are rquired."})
     city_details = cityDetails.cities[case.city]
 
     infection_rate = round((case.problem_start_number_of_active_cases /
@@ -213,11 +215,11 @@ def recommendation(case: CaseRecommendation):
     session.commit()
     cases_query = session.query(Recommendation)
     return ({"recommendation": solution_description_template,
-             "most_similar":[{
-                "top_1" : all_similar_date[1]['solution_description'],
-                "top_2" : all_similar_date[2]['solution_description'],
-                "top_3" : all_similar_date[3]['solution_description'],
-             }]})
+             "most_similar":[
+                all_similar_date[1]['solution_description'],
+                all_similar_date[2]['solution_description'],
+                all_similar_date[3]['solution_description'],
+             ]})
 
 @app.delete("/recommendation/{id}")
 async def delete_recommendation(id: int):
