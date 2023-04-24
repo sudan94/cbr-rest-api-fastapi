@@ -73,7 +73,7 @@ async def create_case(case: Case):
                             city_details["population"]) * 100, 2)
     mortality_rate = round((case.problem_start_number_of_deaths /
                             city_details["population"]) * 100, 2)
-    age_distribution, age_category = categorize.categorize_age(city_details["median_age"])
+    # age_distribution, age_category = categorize.categorize_age(city_details["median_age"])
     density_distribution, density_category = categorize.categorize_density(
         city_details["density"], city_details["population"])
     effectivness = categorize.claculate_effectivness(case.problem_start_number_of_active_cases, case.problem_end_number_of_active_cases,
@@ -85,9 +85,9 @@ async def create_case(case: Case):
     vaccine_policy_description = categorize.vaccine_policy(
         case.solution_vaccine_policy_level)
 
-    p_description = f'Currently, the population density in this area is **{density_category}**. The total population in the affected area is **{city_details["population"]}**, and it has a **{age_category}** age distribution. There are currently **{case.problem_start_number_of_active_cases}** active cases of the disease in the area, out of which **{case.problem_start_number_of_icu_active_cases}** are severe cases. **{case.problem_start_number_of_deaths}** deaths have also been reported so far. The infection rate in this area is **{infection_rate} percentage** and the mortality rate is **{mortality_rate} percentage**.'
+    p_description = f'Currently, the population density in this area is **{density_category}**. The total population in the affected area is **{city_details["population"]}**, and it has a **{city_details["median_age"]}** median age distribution. There are currently **{case.problem_start_number_of_active_cases}** active cases of the disease in the area, out of which **{case.problem_start_number_of_icu_active_cases}** are severe cases. **{case.problem_start_number_of_deaths}** deaths have also been reported so far. The infection rate in this area is **{infection_rate} percentage** and the mortality rate is **{mortality_rate} percentage**.'
 
-    solution_description_template = f'In a scenario where the population density is **{density_category}**, age distribution is **{age_category}**, infection rate is **{infection_rate}** percentage, and mortality rate is **{mortality_rate} percentage**, **with {case.problem_start_number_of_icu_active_cases}** icu active cases.  \nIt is recommended to implement a **level {case.solution_lockdown_policy_level} lockdown policy**, {lockdown_policy_description}.  \nA **level {case.solution_mask_policy_level} mask policy** {mask_policy_description}.  \nIt is important to note that {vaccine_policy_description}.  \nOverall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
+    solution_description_template = f'In a scenario where the population density is **{density_category}**, median age is **{city_details["median_age"]}**, infection rate is **{infection_rate}** percentage, and mortality rate is **{mortality_rate} percentage**, **with {case.problem_start_number_of_icu_active_cases}** icu active cases.  \nIt is recommended to implement a **level {case.solution_lockdown_policy_level} lockdown policy**, {lockdown_policy_description}.  \nA **level {case.solution_mask_policy_level} mask policy** {mask_policy_description}.  \nIt is important to note that {vaccine_policy_description}.  \nOverall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
 
     caseAdd = Cases(start_date=case.start_date,
                     end_date=case.end_date,
@@ -95,7 +95,7 @@ async def create_case(case: Case):
                     problem_description=p_description,
                     problem_population_density=density_distribution,
                     problem_population=city_details["population"],
-                    problem_age_distribution=age_distribution,
+                    problem_age_distribution=city_details["median_age"],
                     problem_start_number_of_active_cases=case.problem_start_number_of_active_cases,
                     problem_end_number_of_active_cases=case.problem_end_number_of_active_cases,
                     problem_start_number_of_icu_active_cases=case.problem_start_number_of_icu_active_cases,
@@ -164,17 +164,17 @@ def recommendation(case: CaseRecommendation):
                             city_details["population"]) * 100, 2)
     mortality_rate = round((case.problem_start_number_of_deaths /
                             city_details["population"]) * 100, 2)
-    age_distribution, age_category = categorize.categorize_age(city_details["median_age"])
+    # age_distribution, age_category = categorize.categorize_age(city_details["median_age"])
     density_distribution, density_category = categorize.categorize_density(
         city_details["density"], city_details["population"])
     effectivness = categorize.claculate_effectivness(case.problem_start_number_of_active_cases,
                                           case.problem_end_number_of_active_cases, case.problem_start_number_of_icu_active_cases, case.problem_end_number_of_icu_active_cases)
 
-    p_description = f'Currently, the population density in this area is **{density_category}**. The total population in the affected area is **{city_details["population"]}**, and it has a **{age_category}** age distribution. There are currently **{case.problem_start_number_of_active_cases}** active cases of the disease in the area, out of which **{case.problem_start_number_of_icu_active_cases}** are severe cases. **{case.problem_start_number_of_deaths}** deaths have also been reported so far. The infection rate in this area is **{infection_rate} percentage** and the mortality rate is **{mortality_rate} percentage**.'
+    p_description = f'Currently, the population density in this area is **{density_category}**. The total population in the affected area is **{city_details["population"]}**, and it has a **{city_details["median_age"]}** median age distribution. There are currently **{case.problem_start_number_of_active_cases}** active cases of the disease in the area, out of which **{case.problem_start_number_of_icu_active_cases}** are severe cases. **{case.problem_start_number_of_deaths}** deaths have also been reported so far. The infection rate in this area is **{infection_rate} percentage** and the mortality rate is **{mortality_rate} percentage**.'
 
     new_problem = case.__dict__
     new_problem['problem_population'] = city_details['population']
-    new_problem['problem_age_distribution'] = age_distribution
+    new_problem['problem_age_distribution'] = city_details["median_age"]
     new_problem['problem_mortality_rate'] = mortality_rate
     new_problem['problem_infection_rate'] = infection_rate
 
@@ -189,7 +189,7 @@ def recommendation(case: CaseRecommendation):
     vaccine_policy_description = categorize.vaccine_policy(
         similar_data['solution_vaccine_policy_level'])
 
-    solution_description_template = f'In a scenario where the population density is **{density_category}**, age distribution is **{age_category}**, infection rate is **{infection_rate}** percentage, and mortality rate is **{mortality_rate} percentage**, **with {case.problem_start_number_of_icu_active_cases}** icu active cases.  \nIt is recommended to implement a **level {similar_data["solution_lockdown_policy_level"]} lockdown policy**, {lockdown_policy_description}.  \nA **level {similar_data["solution_mask_policy_level"]} mask policy** {mask_policy_description}.  \nIt is important to note that {vaccine_policy_description}.  \nOverall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
+    solution_description_template = f'In a scenario where the population density is **{density_category}**, medain age is **{city_details["median_age"]}**, infection rate is **{infection_rate}** percentage, and mortality rate is **{mortality_rate} percentage**, **with {case.problem_start_number_of_icu_active_cases}** icu active cases.  \nIt is recommended to implement a **level {similar_data["solution_lockdown_policy_level"]} lockdown policy**, {lockdown_policy_description}.  \nA **level {similar_data["solution_mask_policy_level"]} mask policy** {mask_policy_description}.  \nIt is important to note that {vaccine_policy_description}.  \nOverall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
 
     caseAdd = Recommendation(start_date=case.start_date,
                     end_date=case.end_date,
@@ -197,7 +197,7 @@ def recommendation(case: CaseRecommendation):
                     problem_description=p_description,
                     problem_population_density=density_distribution,
                     problem_population=city_details["population"],
-                    problem_age_distribution=age_distribution,
+                    problem_age_distribution=city_details["median_age"],
                     problem_start_number_of_active_cases=case.problem_start_number_of_active_cases,
                     problem_end_number_of_active_cases=case.problem_end_number_of_active_cases,
                     problem_start_number_of_icu_active_cases=case.problem_start_number_of_icu_active_cases,
