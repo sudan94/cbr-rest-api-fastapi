@@ -75,7 +75,7 @@ async def create_case(case: Case):
                             city_details["population"]) * 100, 2)
     age_distribution, age_category = categorize.categorize_age(city_details["median_age"])
     density_distribution, density_category = categorize.categorize_density(
-        city_details["median_age"], city_details["population"])
+        city_details["density"], city_details["population"])
     effectivness = categorize.claculate_effectivness(case.problem_start_number_of_active_cases, case.problem_end_number_of_active_cases,
                                           case.problem_start_number_of_icu_active_cases, case.problem_end_number_of_icu_active_cases)
 
@@ -166,7 +166,7 @@ def recommendation(case: CaseRecommendation):
                             city_details["population"]) * 100, 2)
     age_distribution, age_category = categorize.categorize_age(city_details["median_age"])
     density_distribution, density_category = categorize.categorize_density(
-        city_details["median_age"], city_details["population"])
+        city_details["density"], city_details["population"])
     effectivness = categorize.claculate_effectivness(case.problem_start_number_of_active_cases,
                                           case.problem_end_number_of_active_cases, case.problem_start_number_of_icu_active_cases, case.problem_end_number_of_icu_active_cases)
 
