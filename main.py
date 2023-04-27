@@ -265,7 +265,6 @@ def upload_bulk_cases(file: UploadFile = File(...)):
 def create_bulk_cases_csv():
     df = pd.read_csv("data/data.csv",index_col=0)
     for index, row in df.iterrows():
-        print(index)
         city_details = cityDetails.cities[row["city"]]
         infection_rate = round((row["problem_start_number_of_active_cases"] /
                             city_details["population"]) * 100, 2)
