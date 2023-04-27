@@ -79,6 +79,5 @@ class Recommendation(Base):
     solution_lockdown_policy_level = Column(Integer)
     solution_mask_policy_level = Column(Integer)
     solution_vaccine_policy_level = Column(Integer)
-    solution_effectiveness = Column(Integer)
 
 Base.metadata.create_all(engine)

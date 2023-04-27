@@ -1,11 +1,11 @@
 import numpy as np
 
 
-def find_similar_cases_by_distance(new_problem, case_library, k=4, distance_metric='euclidean'):
+def find_similar_cases_by_distance(new_problem, case_library, numerical_features, k=4, distance_metric='euclidean'):
     # define distance function for numerical features
     def numerical_distance(case1, case2):
         # select numerical features to normalize
-        numerical_features = ['problem_population', 'problem_age_distribution', 'problem_start_number_of_active_cases', 'problem_end_number_of_active_cases', 'problem_start_number_of_icu_active_cases', 'problem_end_number_of_icu_active_cases', 'problem_start_number_of_deaths', 'problem_end_number_of_deaths', 'problem_vaccinated_population','problem_average_temprature','problem_average_humidity','problem_mortality_rate','problem_infection_rate']
+        # numerical_features = ['problem_population', 'problem_age_distribution', 'problem_start_number_of_active_cases', 'problem_end_number_of_active_cases', 'problem_start_number_of_icu_active_cases', 'problem_end_number_of_icu_active_cases', 'problem_start_number_of_deaths', 'problem_end_number_of_deaths', 'problem_vaccinated_population','problem_average_temprature','problem_average_humidity','problem_mortality_rate','problem_infection_rate']
 
          # extract numerical features from inputs
         case1_num = np.array([case1[f] for f in numerical_features], dtype=float)
