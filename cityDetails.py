@@ -1,14 +1,15 @@
 cities = {
+    'Ahrweiler': {"population": 128146, "area": 787.05, "density": 162.82, "median_age":46.9},
+    'Altenkirchen (Westerwald)': {'population': 129261, 'area': 642.34, 'density': 201.23, 'median_age': 45.4},
+    'Alzey-Worms': {'population': 131330, 'area': 588.07, 'density': 223.32, 'median_age': 44.7},
     "Adenau": {"population": 3020, "area": 18.56, "density": 162.7, "median_age": 47},
     "Andernach": {"population": 29243, "area": 53.4, "density": 548, "median_age": 45.6},
     "Annweiler am Trifels": {"population": 6946, "area": 41.2, "density": 169, "median_age": 46.4},
     "Bacharach": {"population": 1839, "area": 23.35, "density": 78.76, "median_age": 44.8},
     "Bad Bergzabern": {"population": 7389, "area": 11.5, "density": 643, "median_age": 46.5},
     "Bad Breisig": {"population": 8795, "area": 19.9, "density": 442, "median_age": 47},
-    "Bad Dürkheim": {"population": 18576, "area": 102.5, "density": 181.1, "median_age": 47.2},
     "Bad Ems": {"population": 9761, "area": 15.41, "density": 633.4, "median_age": 46.5},
     "Bad Hönningen": {"population": 5974, "area": 20.09, "density": 297.4, "median_age": 45.7},
-    "Bad Kreuznach": {"population": 51695, "area": 55.56, "density": 930.4, "median_age": 46.1},
     "Bad Marienberg": {"population": 6137, "area": 9.950, "density": 616.8, "median_age": 44.7},
     "Bad Neuenahr-Ahrweiler": {"population": 26550, "area": 63.39, "density": 418.8, "median_age": 47},
     "Bad Sobernheim": {"population": 6479, "area": 54.18, "density": 119.6, "median_age": 46.1},
@@ -36,7 +37,6 @@ cities = {
     "Frankenthal (Pfalz)": {"population": 48773, "area": 43.88, "density": 1112, "median_age": 45.3},
     "Freinsheim": {"population": 4898, "area": 13.59, "density": 360.4, "median_age": 47.2},
     "Gau-Algesheim": {"population": 6878, "area": 13.99, "density": 491.6, "median_age": 44.8},
-    "Germersheim": {"population": 20716, "area": 21.68, "density": 955.5, "median_age": 44},
     "Gerolstein": {"population": 7710, "area": 64.43, "density": 119.7, "median_age": 46.6},
     "Grünstadt": {"population": 13840, "area": 18.09, "density": 765.1, "median_age": 47.2},
     "Guntersblum": {"population": 3924, "area": 16.71, "density": 234.8, "median_age": 44.8},
@@ -51,7 +51,7 @@ cities = {
     "Idar-Oberstein": {"population": 28423, "area": 91.58, "density": 310.4, "median_age": 47.2},
     "Ingelheim am Rhein": {"population": 35486, "area": 73.31, "density": 484.1, "median_age": 44.8},
     "Kaisersesch": {"population": 3191, "area": 8.180, "density": 390.1, "median_age": 46.6},
-    "Kaiserslautern": {"population": 99292, "area": 139.73, "density": 710.8, "median_age": 43.2},
+    "Kaiserslautern (Stadt)": {"population": 99292, "area": 139.73, "density": 710.8, "median_age": 43.2},
     "Kandel": {"population": 9017, "area": 26.69, "density": 337.8, "median_age": 43.9},
     "Kastellaun": {"population": 5557, "area": 8.470, "density": 656.1, "median_age": 45.8},
     "Katzenelnbogen": {"population": 2240, "area": 9.180, "density": 244, "median_age": 46.6},
@@ -103,7 +103,140 @@ cities = {
     "Wörms": {"population": 83850, "area": 108.7, "density": 771.2, "median_age": 44.2},
     "Wörrstadt": {"population": 8189, "area": 16.75, "density": 488.9, "median_age": 44.7},
     "Zell (Mosel)": {"population": 4086, "area": 44.95, "density": 90.90, "median_age": 46.6},
-    "Zweibrücken": {"population": 34290, "area": 69.49, "density": 494, "median_age": 46.1}
+    "Zweibrücken": {"population": 34290, "area": 69.49, "density": 494, "median_age": 46.1},
+    "Bad Dürkheim": {"population": 133206, "area": 594.62, "density": 224.02, "median_age": 47.2},
+    "Bad Kreuznach": {
+        "population": 159402,
+        "area": 863.89,
+        "density": 184.52,
+        "median_age": 46.1
+    },
+    "Bernkastel-Wittlich": {
+        "population": 113194,
+        "area": 1167.9,
+        "density": 96.92,
+        "median_age": 45.9
+    },
+    "Birkenfeld": {
+        "population": 80849,
+        "area": 776.83,
+        "density": 104.08,
+        "median_age": 47.2
+    },
+    "Bitburg-Prüm": {
+        "population": 100959,
+        "area": 1626.92,
+        "density": 62.06,
+        "median_age": 44.9
+    },
+    "Cochem-Zell": {
+        "population": 61735,
+        "area": 692.47,
+        "density": 89.15,
+        "median_age": 46.6
+    },
+    "Donnersbergkreis": {
+        "population": 75569,
+        "area": 645.42,
+        "density": 117.08,
+        "median_age": 45.4
+    },
+    "Germersheim": {
+        "population": 129313,
+        "area": 463.32,
+        "density": 279.1,
+        "median_age": 44
+    },
+    "Kaiserslautern": {
+        "population": 106853,
+        "area": 639.97,
+        "density": 166.97,
+        "median_age": 45.6
+    },
+    "Kusel": {
+        "population": 69949,
+        "area": 573.59,
+        "density": 121.95,
+        "median_age": 47.1
+    },
+    "Mainz": {
+        "population": 217556,
+        "area": 97.73,
+        "density": 2226.09,
+        "median_age": 45
+    },
+    "Mainz-Bingen": {
+        "population": 212420,
+        "area": 605.34,
+        "density": 350.91,
+        "median_age": 44.6
+    },
+    "Mayen-Koblenz": {
+        "population": 215446,
+        "area": 817.67,
+        "density": 263.49,
+        "median_age": 45.5
+    },
+    "Neuwied": {
+        "population": 184390,
+        "area": 627.04,
+        "density": 294.06,
+        "median_age": 45.7
+    },
+    "Rhein-Hunsrück-Kreis": {
+        "population": 103767,
+        "area": 991.07,
+        "density": 104.7,
+        "median_age": 45.8
+    },
+    "Rhein-Lahn-Kreis": {
+        "population": 122724,
+        "area": 782.18,
+        "density": 156.9,
+        "median_age": 46.5
+    },
+    "Rhein-Pfalz-Kreis": {
+        "population": 155050,
+        "area": 305.01,
+        "density": 508.34,
+        "median_age": 46.4
+    },
+    "Südliche Weinstraße": {
+        "population": 111279,
+        "area": 639.95,
+        "density": 173.89,
+        "median_age": 46.2
+    },
+    "Südwestpfalz": {
+        "population": 94819,
+        "area": 953.6,
+        "density": 99.43,
+        "median_age": 47.5
+    },
+    "Trier-Saarburg": {
+        "population": 151167,
+        "area": 1102.22,
+        "density": 137.15,
+        "median_age": 44.6
+    },
+    "Vulkaneifel": {
+        "population": 60882,
+        "area": 911.65,
+        "density": 66.78,
+        "median_age": 46.6
+    },
+    "Westerwaldkreis": {
+        "population": 203831,
+        "area": 989.05,
+        "density": 206.09,
+        "median_age": 44.7
+    },
+    "Zweibrücken": {
+        "population": 34091,
+        "area": 70.64,
+        "density": 482.6,
+        "median_age": 46.1
+    },
 }
 
 # The population and area data for the cities in Rheinland-Pfalz was obtained from the (https://www.city-facts.com and http://citypopulation.de/en/germany/rheinlandpfalz/) as of September 2021.
