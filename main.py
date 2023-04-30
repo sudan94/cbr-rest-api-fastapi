@@ -175,6 +175,7 @@ def recommendation(case: CaseRecommendation):
 
     new_problem = case.__dict__
     new_problem['problem_population'] = city_details['population']
+    new_problem['problem_population_density'] = density_distribution
     new_problem['problem_age_distribution'] = city_details["median_age"]
     new_problem['problem_mortality_rate'] = mortality_rate
     new_problem['problem_infection_rate'] = infection_rate
@@ -188,6 +189,7 @@ def recommendation(case: CaseRecommendation):
 
     all_similar_date = similarity.find_similar_cases_by_distance(
         new_problem, get_cases(), numerical_features, 4, 'euclidean')
+    # all_similar_date = similarity.similar_cases_knn(new_problem, get_cases())
     similar_data = all_similar_date[0]
 
     lockdown_policy_description = categorize.lockdown_policy(
@@ -284,7 +286,7 @@ def create_bulk_cases_csv():
 
         p_description = f'Currently, the population density in this area is **{density_category}**. The total population in the affected area is **{city_details["population"]}**, and it has a **{city_details["median_age"]}** median age distribution. There are currently **{row["problem_start_number_of_active_cases"]}** active cases of the disease in the area, out of which **{row["problem_start_number_of_icu_active_cases"]}** are severe cases. **{row["problem_start_number_of_deaths"]}** deaths have also been reported so far. The infection rate in this area is **{infection_rate} percentage** and the mortality rate is **{mortality_rate} percentage**.'
 
-        solution_description_template = f'In a scenario where the population density is **{density_category}**, median age is **{city_details["median_age"]}**, infection rate is **{infection_rate}** percentage, and mortality rate is **{mortality_rate} percentage**, **with {row["problem_start_number_of_icu_active_cases"]}** icu active cases.  \nIt is recommended to implement a **level {row["solution_lockdown_policy_level"]} lockdown policy**, {lockdown_policy_description}.  \nA **level {row["solution_mask_policy_level"]} mask policy** {mask_policy_description}.  \nIt is important to note that {vaccine_policy_description}.  \nOverall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
+        solution_description_template = f'In a scenario where the population density is **{density_category}**, median age is **{city_details["median_age"]}**, infection rate is **{infection_rate}** percentage, and mortality rate is **{mortality_rate} percentage**, **with {int(row["problem_start_number_of_icu_active_cases"])}** icu active cases.  \nIt is recommended to implement a **level {int(row["solution_lockdown_policy_level"])} lockdown policy**, {lockdown_policy_description}.  \nA **level {int(row["solution_mask_policy_level"])} mask policy** {mask_policy_description}.  \nIt is important to note that {vaccine_policy_description}.  \nOverall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
         caseAdd = Cases(start_date=row["start_date"],
                     end_date=row["end_date"],
                     city=row["city"],
