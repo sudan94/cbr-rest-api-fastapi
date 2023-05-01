@@ -1,94 +1,283 @@
-import numpy as np
-from sklearn import metrics
-from sklearn.model_selection import train_test_split
-from sklearn import neighbors
-import pandas as pd
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.preprocessing import StandardScaler
-from sklearn import svm
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
-def similar_cases_knn(new_problem, case_library):
-    df = pd.DataFrame(case_library)
-    X = df[['problem_population', 'problem_age_distribution', 'problem_start_number_of_active_cases', 'problem_end_number_of_active_cases', 'problem_start_number_of_icu_active_cases', 'problem_end_number_of_icu_active_cases', 'problem_start_number_of_deaths', 'problem_end_number_of_deaths', 'problem_vaccinated_population','problem_average_temperature','problem_average_humidity','problem_mortality_rate','problem_infection_rate']]
-    y = df[['solution_lockdown_policy_level', 'solution_mask_policy_level', 'solution_vaccine_policy_level']]
 
-    df1 = pd.DataFrame([new_problem],columns=new_problem.keys())
-    test_data = df1[['problem_population', 'problem_age_distribution', 'problem_start_number_of_active_cases', 'problem_end_number_of_active_cases', 'problem_start_number_of_icu_active_cases', 'problem_end_number_of_icu_active_cases', 'problem_start_number_of_deaths', 'problem_end_number_of_deaths', 'problem_vaccinated_population','problem_average_temperature','problem_average_humidity','problem_mortality_rate','problem_infection_rate']]
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=2)
-    model = neighbors.KNeighborsClassifier(n_neighbors=5)
-    model.fit(X_train, y_train)
-    knn = model.predict(test_data)
-    y_pred = model.predict(X_test)
-
-    df_prediction = pd.DataFrame(knn,columns=['solution_lockdown_policy_level', 'solution_mask_policy_level', 'solution_vaccine_policy_level'])
-    print("KNN")
-    print(knn)
-
-    y_test = y_test.transpose()
-    df_prediction = df_prediction.transpose()
+from fastapi import APIRouter
+from pydantic import BaseModel
+from typing import Union
+import cityDetails
+import categorize
+from models import Cases, session, Recommendation
+import ml
 
 
-    model = DecisionTreeClassifier()
-    model.fit(X_train, y_train)
-    y_pred = model.predict(test_data)
-    df_decision_tree = pd.DataFrame(y_pred,columns=['solution_lockdown_policy_level', 'solution_mask_policy_level', 'solution_vaccine_policy_level'])
-    print("Decision tree")
-    print(y_pred)
-    # print (metrics.classification_report(list(y_test), list(df_decision_tree)))
-    # print (metrics.confusion_matrix(list(y_test), list(df_decision_tree)))
-
-    sc = StandardScaler()
-    X_train = sc.fit_transform(X_train)
-    X_test = sc.fit_transform(X_test)
-
-    # linear regression
-    # all parameters not specified are set to their defaults
-    Linear_regression = LinearRegression()
-
-    Linear_regression.fit(X_train, y_train)
-
-    predictions = Linear_regression.predict(test_data)
-
-    print(predictions)
+class Case(BaseModel):
+    start_date: str
+    end_date: str
+    city: str
+    problem_start_number_of_active_cases: int
+    problem_end_number_of_active_cases: int
+    problem_start_number_of_icu_active_cases: int
+    problem_end_number_of_icu_active_cases: int
+    problem_start_number_of_deaths: int
+    problem_end_number_of_deaths: int
+    problem_vaccinated_population: int
+    problem_average_temperature: float
+    problem_average_humidity: float
+    solution_lockdown_policy_level: int
+    solution_mask_policy_level: int
+    solution_vaccine_policy_level: int
 
 
+class CaseRecommendation(BaseModel):
+    start_date: str
+    end_date: str | None = None
+    city: str
+    problem_start_number_of_active_cases: int
+    problem_end_number_of_active_cases: Union[int, str] | None = None
+    problem_start_number_of_icu_active_cases: int
+    problem_end_number_of_icu_active_cases: Union[int, str] | None = None
+    problem_start_number_of_deaths: int
+    problem_end_number_of_deaths: Union[int, str] | None = None
+    problem_vaccinated_population: Union[int, str] | None = None
+    problem_average_temperature: Union[float, str] | None = None
+    problem_average_humidity: Union[float, str] | None = None
 
-def find_similar_cases_by_distance(new_problem, case_library, numerical_features, k=4, distance_metric='euclidean'):
-    # define distance function for numerical features
-    def numerical_distance(case1, case2):
-        # select numerical features to normalize
-        # numerical_features = ['problem_population', 'problem_age_distribution', 'problem_start_number_of_active_cases', 'problem_end_number_of_active_cases', 'problem_start_number_of_icu_active_cases', 'problem_end_number_of_icu_active_cases', 'problem_start_number_of_deaths', 'problem_end_number_of_deaths', 'problem_vaccinated_population','problem_average_temprature','problem_average_humidity','problem_mortality_rate','problem_infection_rate']
 
-         # extract numerical features from inputs
-        case1_num = np.array([case1[f] for f in numerical_features], dtype=float)
-        case2_num = np.array([case2[f] for f in numerical_features], dtype=float)
-                # calculate z-score normalization for both vectors
-        case1_norm = (case1_num - np.mean(case1_num)) / np.std(case1_num)
-        case2_norm = (case2_num - np.mean(case2_num)) / np.std(case2_num)
-                # calculate Euclidean distance between the normalized vectors
-        distance = np.linalg.norm(case1_norm - case2_norm)
-                # return distance
-        return distance
+router = APIRouter()
 
-    # compute distance between new problem and each case in the case library
-    distances = []
-    for case in case_library:
-        if distance_metric == 'euclidean':
-            num_distance = numerical_distance(new_problem, case)
-            distances.append((case['id'], num_distance))
 
-    # sort distances in ascending order
-    distances.sort(key=lambda x: x[1])
-    print(numerical_features)
+def get_cases():
+    all_cases = []
+    cases_query = session.query(Cases)
+    for i in cases_query.all():
+        all_cases.append(i.__dict__)
+    return all_cases
 
-    # return the k most similar cases
-    most_similar_cases = []
-    for i in range(k):
-        case_id = distances[i][0]
-        case = next(
-            (case for case in case_library if case['id'] == case_id), None)
-        most_similar_cases.append(case)
 
-    return most_similar_cases
+@router.get("/recommendation")
+async def get_all_recommendation():
+    recommendation_query = session.query(Recommendation)
+    return ({"result": recommendation_query.all()})
+
+
+@router.post("/recommendation")
+def recommendation(case: CaseRecommendation):
+    if len(get_cases()) < 4:
+        return ({"result": "Not enough cases. At least 4 cases are rquired."})
+    city_details = cityDetails.cities[case.city]
+
+    infection_rate = round((case.problem_start_number_of_active_cases /
+                            city_details["population"]) * 100, 2)
+    mortality_rate = round((case.problem_start_number_of_deaths /
+                            city_details["population"]) * 100, 2)
+    # age_distribution, age_category = categorize.categorize_age(city_details["median_age"])
+    density_distribution, density_category = categorize.categorize_density(
+        city_details["density"], city_details["population"])
+
+    p_description = f'Currently, the population density in this area is **{density_category}**. The total population in the affected area is **{city_details["population"]}**, and it has a **{city_details["median_age"]}** median age distribution. There are currently **{case.problem_start_number_of_active_cases}** active cases of the disease in the area, out of which **{case.problem_start_number_of_icu_active_cases}** are severe cases. **{case.problem_start_number_of_deaths}** deaths have also been reported so far. The infection rate in this area is **{infection_rate} percentage** and the mortality rate is **{mortality_rate} percentage**.'
+
+    new_problem = case.__dict__
+    new_problem['problem_population'] = city_details['population']
+    new_problem['problem_population_density'] = density_distribution
+    new_problem['problem_age_distribution'] = city_details["median_age"]
+    new_problem['problem_mortality_rate'] = mortality_rate
+    new_problem['problem_infection_rate'] = infection_rate
+
+    # similarity comparision for features than are not null
+    numerical_features = []
+    for key, value in new_problem.items():
+        if value != "" and key != "start_date" and key != "end_date" and key != "city":
+            numerical_features.append(key)
+
+    all_similar_date = ml.find_similar_cases_by_distance(
+        new_problem, get_cases(), numerical_features, 4, 'euclidean')
+    # all_similar_date = similarity.similar_cases_knn(new_problem, get_cases())
+    similar_data = all_similar_date[0]
+
+    lockdown_policy_description = categorize.lockdown_policy(
+        similar_data['solution_lockdown_policy_level'])
+    mask_policy_description = categorize.mask_policy(
+        similar_data['solution_mask_policy_level'])
+    vaccine_policy_description = categorize.vaccine_policy(
+        similar_data['solution_vaccine_policy_level'])
+
+    solution_description_template = f'In a scenario where the population density is **{density_category}**, medain age is **{city_details["median_age"]}**, infection rate is **{infection_rate}** percentage, and mortality rate is **{mortality_rate} percentage**, **with {case.problem_start_number_of_icu_active_cases}** icu active cases.  \nIt is recommended to implement a **level {similar_data["solution_lockdown_policy_level"]} lockdown policy**, {lockdown_policy_description}.  \nA **level {similar_data["solution_mask_policy_level"]} mask policy** {mask_policy_description}.  \nIt is important to note that {vaccine_policy_description}.  \nOverall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
+
+    caseAdd = Recommendation(start_date=case.start_date,
+                             end_date=None if case.end_date == "" else case.end_date,
+                             city=case.city,
+                             problem_description=p_description,
+                             problem_population_density=density_distribution,
+                             problem_population=city_details["population"],
+                             problem_age_distribution=city_details["median_age"],
+                             problem_start_number_of_active_cases=case.problem_start_number_of_active_cases,
+                             problem_end_number_of_active_cases=None if case.problem_end_number_of_active_cases == "" else case.problem_end_number_of_active_cases,
+                             problem_start_number_of_icu_active_cases=case.problem_start_number_of_icu_active_cases,
+                             problem_end_number_of_icu_active_cases=None if case.problem_end_number_of_icu_active_cases == "" else case.problem_end_number_of_icu_active_cases,
+                             problem_start_number_of_deaths=case.problem_start_number_of_deaths,
+                             problem_end_number_of_deaths=None if case.problem_end_number_of_deaths == "" else case.problem_end_number_of_deaths,
+                             problem_vaccinated_population=None if case.problem_vaccinated_population == "" else case.problem_vaccinated_population,
+                             problem_infection_rate=infection_rate,
+                             problem_mortality_rate=mortality_rate,
+                             problem_average_temperature=None if case.problem_average_temperature == "" else case.problem_vaccinated_population,
+                             problem_average_humidity=None if case.problem_average_humidity == "" else case.problem_average_humidity,
+                             solution_description=solution_description_template,
+                             solution_lockdown_policy_level=similar_data['solution_lockdown_policy_level'],
+                             solution_mask_policy_level=similar_data['solution_mask_policy_level'],
+                             solution_vaccine_policy_level=similar_data['solution_vaccine_policy_level'])
+
+    session.add(caseAdd)
+    session.commit()
+    cases_query = session.query(Recommendation)
+    return ({"recommendation": solution_description_template,
+             "most_similar": [
+                 all_similar_date[1]['solution_description'],
+                 all_similar_date[2]['solution_description'],
+                 all_similar_date[3]['solution_description'],
+             ]})
+
+
+@router.delete("/recommendation/{id}")
+async def delete_recommendation(id: int):
+    case = session.query(Recommendation).filter(
+        Recommendation.id == id).first()
+    session.delete(case)
+    session.commit()
+    return {"Recommendation deleted": case.id}
+
+
+@router.post("/recommendation/knn")
+async def recommendation_knn(case: CaseRecommendation):
+    if len(get_cases()) < 4:
+        return ({"result": "Not enough cases. At least 4 cases are rquired."})
+    city_details = cityDetails.cities[case.city]
+
+    infection_rate = round((case.problem_start_number_of_active_cases /
+                            city_details["population"]) * 100, 2)
+    mortality_rate = round((case.problem_start_number_of_deaths /
+                            city_details["population"]) * 100, 2)
+    # age_distribution, age_category = categorize.categorize_age(city_details["median_age"])
+    density_distribution, density_category = categorize.categorize_density(
+        city_details["density"], city_details["population"])
+
+    p_description = f'Currently, the population density in this area is **{density_category}**. The total population in the affected area is **{city_details["population"]}**, and it has a **{city_details["median_age"]}** median age distribution. There are currently **{case.problem_start_number_of_active_cases}** active cases of the disease in the area, out of which **{case.problem_start_number_of_icu_active_cases}** are severe cases. **{case.problem_start_number_of_deaths}** deaths have also been reported so far. The infection rate in this area is **{infection_rate} percentage** and the mortality rate is **{mortality_rate} percentage**.'
+
+    new_problem = case.__dict__
+    new_problem['problem_population'] = city_details['population']
+    new_problem['problem_population_density'] = density_distribution
+    new_problem['problem_age_distribution'] = city_details["median_age"]
+    new_problem['problem_mortality_rate'] = mortality_rate
+    new_problem['problem_infection_rate'] = infection_rate
+
+    # similarity comparision for features than are not null
+    numerical_features = []
+    for key, value in new_problem.items():
+        if value != "" and key != "start_date" and key != "end_date" and key != "city":
+            numerical_features.append(key)
+
+    all_similar_date = ml.similar_cases_knn(
+        new_problem, get_cases(), numerical_features)
+
+    similar_data = all_similar_date
+    solution_description_template = add_recommendation(case,similar_data)
+
+    return ({"recommendation": solution_description_template})
+
+
+@router.post("/recommendation/decision_tree")
+async def recommendation_decision_tree(case: CaseRecommendation):
+    if len(get_cases()) < 4:
+        return ({"result": "Not enough cases. At least 4 cases are rquired."})
+    city_details = cityDetails.cities[case.city]
+
+    infection_rate = round((case.problem_start_number_of_active_cases /
+                            city_details["population"]) * 100, 2)
+    mortality_rate = round((case.problem_start_number_of_deaths /
+                            city_details["population"]) * 100, 2)
+    # age_distribution, age_category = categorize.categorize_age(city_details["median_age"])
+    density_distribution, density_category = categorize.categorize_density(
+        city_details["density"], city_details["population"])
+
+    p_description = f'Currently, the population density in this area is **{density_category}**. The total population in the affected area is **{city_details["population"]}**, and it has a **{city_details["median_age"]}** median age distribution. There are currently **{case.problem_start_number_of_active_cases}** active cases of the disease in the area, out of which **{case.problem_start_number_of_icu_active_cases}** are severe cases. **{case.problem_start_number_of_deaths}** deaths have also been reported so far. The infection rate in this area is **{infection_rate} percentage** and the mortality rate is **{mortality_rate} percentage**.'
+
+    new_problem = case.__dict__
+    new_problem['problem_population'] = city_details['population']
+    new_problem['problem_population_density'] = density_distribution
+    new_problem['problem_age_distribution'] = city_details["median_age"]
+    new_problem['problem_mortality_rate'] = mortality_rate
+    new_problem['problem_infection_rate'] = infection_rate
+
+    # similarity comparision for features than are not null
+    numerical_features = []
+    for key, value in new_problem.items():
+        if value != "" and key != "start_date" and key != "end_date" and key != "city":
+            numerical_features.append(key)
+
+    all_similar_date = ml.similar_cases_decison_tree(
+        new_problem, get_cases(), numerical_features)
+
+    similar_data = all_similar_date
+    solution_description_template = add_recommendation(case,similar_data)
+
+    return ({"recommendation": solution_description_template})
+
+
+@router.get("/evaluation")
+async def evaluation_of_algorithms():
+    result = ml.calculate_metrices(get_cases())
+    return ({"result": result})
+
+
+def add_recommendation(case,similar_data):
+
+    city_details = cityDetails.cities[case.city]
+
+    infection_rate = round((case.problem_start_number_of_active_cases /
+                            city_details["population"]) * 100, 2)
+    mortality_rate = round((case.problem_start_number_of_deaths /
+                            city_details["population"]) * 100, 2)
+    # age_distribution, age_category = categorize.categorize_age(city_details["median_age"])
+    density_distribution, density_category = categorize.categorize_density(
+        city_details["density"], city_details["population"])
+
+    p_description = f'Currently, the population density in this area is **{density_category}**. The total population in the affected area is **{city_details["population"]}**, and it has a **{city_details["median_age"]}** median age distribution. There are currently **{case.problem_start_number_of_active_cases}** active cases of the disease in the area, out of which **{case.problem_start_number_of_icu_active_cases}** are severe cases. **{case.problem_start_number_of_deaths}** deaths have also been reported so far. The infection rate in this area is **{infection_rate} percentage** and the mortality rate is **{mortality_rate} percentage**.'
+
+    lockdown_policy_description = categorize.lockdown_policy(
+        similar_data['solution_lockdown_policy_level'][0])
+    mask_policy_description = categorize.mask_policy(
+        similar_data['solution_mask_policy_level'][0])
+    vaccine_policy_description = categorize.vaccine_policy(
+        similar_data['solution_vaccine_policy_level'][0])
+
+    solution_description_template = f'In a scenario where the population density is **{density_category}**, medain age is **{city_details["median_age"]}**, infection rate is **{infection_rate}** percentage, and mortality rate is **{mortality_rate} percentage**, **with {case.problem_start_number_of_icu_active_cases}** icu active cases.  \nIt is recommended to implement a **level {similar_data["solution_lockdown_policy_level"][0]} lockdown policy**, {lockdown_policy_description}.  \nA **level {similar_data["solution_mask_policy_level"][0]} mask policy** {mask_policy_description}.  \nIt is important to note that {vaccine_policy_description}.  \nOverall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
+
+    caseAdd = Recommendation(start_date=case.start_date,
+                             end_date=None if case.end_date == "" else case.end_date,
+                             city=case.city,
+                             problem_description=p_description,
+                             problem_population_density=density_distribution,
+                             problem_population=city_details["population"],
+                             problem_age_distribution=city_details["median_age"],
+                             problem_start_number_of_active_cases=case.problem_start_number_of_active_cases,
+                             problem_end_number_of_active_cases=None if case.problem_end_number_of_active_cases == "" else case.problem_end_number_of_active_cases,
+                             problem_start_number_of_icu_active_cases=case.problem_start_number_of_icu_active_cases,
+                             problem_end_number_of_icu_active_cases=None if case.problem_end_number_of_icu_active_cases == "" else case.problem_end_number_of_icu_active_cases,
+                             problem_start_number_of_deaths=case.problem_start_number_of_deaths,
+                             problem_end_number_of_deaths=None if case.problem_end_number_of_deaths == "" else case.problem_end_number_of_deaths,
+                             problem_vaccinated_population=None if case.problem_vaccinated_population == "" else case.problem_vaccinated_population,
+                             problem_infection_rate=infection_rate,
+                             problem_mortality_rate=mortality_rate,
+                             problem_average_temperature=None if case.problem_average_temperature == "" else case.problem_vaccinated_population,
+                             problem_average_humidity=None if case.problem_average_humidity == "" else case.problem_average_humidity,
+                             solution_description=solution_description_template,
+                             solution_lockdown_policy_level=int(
+                                 similar_data['solution_lockdown_policy_level'][0]),
+                             solution_mask_policy_level=int(
+                                 similar_data['solution_mask_policy_level'][0]),
+                             solution_vaccine_policy_level=int(similar_data['solution_vaccine_policy_level'][0]))
+
+    session.add(caseAdd)
+    try:
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    return solution_description_template
