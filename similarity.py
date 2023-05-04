@@ -99,7 +99,13 @@ def recommendation(case: CaseRecommendation):
     #     similar_data['solution_lockdown_policy_level'])
     mask_policy_description = categorize.mask_policy(
         similar_data['solution_mask_policy_level'])
-    vaccine_policy_description = categorize.vaccine_policy(
+
+    if case.problem_vaccinated_population == 0:
+        vaccine_policy_description = categorize.vaccine_policy(case.problem_vaccinated_population)
+    elif similar_data['solution_vaccine_policy_level'] < case.problem_vaccinated_population:
+        vaccine_policy_description = categorize.vaccine_policy(case.problem_vaccinated_population)
+    else:
+        vaccine_policy_description = categorize.vaccine_policy(
         similar_data['solution_vaccine_policy_level'])
 
     solution_description_template = f'In a scenario where the population density is **{density_category}**, medain age is **{city_details["median_age"]}**, infection rate is **{infection_rate}** percentage, and mortality rate is **{mortality_rate} percentage**, **with {case.problem_start_number_of_icu_active_cases}** icu active cases.  \nIt is recommended to implement a **level {lockdown_level} lockdown policy**, {lockdown_policy_description}.  \nA **level {similar_data["solution_mask_policy_level"]} mask policy** {mask_policy_description}.  \nIt is important to note that {vaccine_policy_description}.  \nOverall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
