@@ -53,7 +53,7 @@ def lockdown_policy(level):
         lockdown_policy_description = "(require not leaving house with exceptions for daily exercise, grocery shopping, and ‘essential’ trips)"
     else:
         lockdown_policy_description = "(require not leaving house with minimal exceptions (e.g., allowed to leave only once every few days, or only one person can leave at a time, etc.)not implementing any lockdown policy)"
-    return lockdown_policy_description
+    return lockdown_policy_description, level
 
 def mask_policy(level):
     # Define the mask policy description based on the mask policy level
@@ -82,3 +82,18 @@ def vaccine_policy(level):
     else:
         vaccine_policy_description = "(vaccination avilable for all three, plus partial additional availability *select broad groups/ages*)"
     return vaccine_policy_description
+
+def lockdown_policy_evaluation(level,start_cases,populaton):
+    cases_percentage = (start_cases / populaton) * 100
+    print(cases_percentage)
+    if (0.32 >  cases_percentage < 0.45) and (level == 2 or level == 1 or level == 0):
+        return 2
+    elif cases_percentage > 0.45 and (level == 2 or level == 1 or level == 0):
+        return 3
+    else:
+        return 0
+
+# if 50% of popuaation is vac then no lockdown and cases
+# lockdown level 2 : 50% vacc and more than 0.32 and less than 0.45 (based on city to population) cases start_Date
+#  level 3 : no vaccine less than 30 per and 2000 cases
+
