@@ -91,7 +91,6 @@ def recommendation(case: CaseRecommendation):
     all_similar_date = ml.find_similar_cases_by_distance(
         new_problem, get_cases(), numerical_features, 4, 'euclidean')
     # all_similar_date = similarity.similar_cases_knn(new_problem, get_cases())
-
     similar_data = all_similar_date[0]
     lockdown_policy_description, lockdown_level = categorize.lockdown_policy(categorize.lockdown_policy_evaluation(case.problem_vaccinated_population,case.problem_start_number_of_active_cases,city_details["population"]))
     print(lockdown_level)
@@ -109,6 +108,9 @@ def recommendation(case: CaseRecommendation):
         similar_data['solution_vaccine_policy_level'])
 
     solution_description_template = f'In a scenario where the population density is **{density_category}**, medain age is **{city_details["median_age"]}**, infection rate is **{infection_rate}** percentage, and mortality rate is **{mortality_rate} percentage**, **with {case.problem_start_number_of_icu_active_cases}** icu active cases.  \nIt is recommended to implement a **level {lockdown_level} lockdown policy**, {lockdown_policy_description}.  \nA **level {similar_data["solution_mask_policy_level"]} mask policy** {mask_policy_description}.  \nIt is important to note that {vaccine_policy_description}.  \nOverall, taking these measures can help control the spread of the disease and minimize the number of severe cases and deaths in the affected area.'
+    similar_solution = []
+    for x in all_similar_date[1:]:
+        similar_solution.append(x["solution_description"])
 
     caseAdd = Recommendation(start_date=case.start_date,
                              end_date=None if case.end_date == "" else case.end_date,
@@ -138,9 +140,7 @@ def recommendation(case: CaseRecommendation):
     cases_query = session.query(Recommendation)
     return ({"recommendation": solution_description_template,
              "most_similar": [
-                 all_similar_date[1]['solution_description'],
-                 all_similar_date[2]['solution_description'],
-                 all_similar_date[3]['solution_description'],
+                similar_solution
              ]})
 
 
