@@ -2,6 +2,9 @@
 
 This is a API for a case based reasoner that provides policy recommendation in the context of Covid-19 such as lockdown, mask, and vaccine policies. This API allows decision makers to create cases, view them, and submit a query to the reasoner which will return a policy recommendation as well as the top 3 most similar cases. The API is built using fastapi and is deployed on Render.com. The case based reasoner API is connected to a Postgres database that stores the cases. The database and the API are hosted and deployed on Render.com.
 
+## Demo
+https://cbr-api.onrender.com/docs
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
