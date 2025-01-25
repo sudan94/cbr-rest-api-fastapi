@@ -1,4 +1,4 @@
-# Case Based Reaoner For Recommending Covid-19 Policies
+# Case-Based Reasoner for Recommending COVID-19 Policies
 
 This is a API for a case based reasoner that provides policy recommendation in the context of Covid-19 such as lockdown, mask, and vaccine policies. This API allows decision makers to create cases, view them, and submit a query to the reasoner which will return a policy recommendation as well as the top 3 most similar cases. The API is built using fastapi and is deployed on Render.com. The case based reasoner API is connected to a Postgres database that stores the cases. The database and the API are hosted and deployed on Render.com.
 
